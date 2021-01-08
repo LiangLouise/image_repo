@@ -39,4 +39,4 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
           path: .
-          dockerfile: ./build/Dockerfile
+          dockerfile: ./Dockerfile
