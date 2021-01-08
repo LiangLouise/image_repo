@@ -34,7 +34,5 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Docker Image name
           image-name: image_repo
-          # Docker Image tag
-          image-tag: head
           # Extract git-tag from repository
           extract-git-tag: true
