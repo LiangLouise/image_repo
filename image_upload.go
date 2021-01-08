@@ -5,13 +5,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func saveImage() {
 
 }
 
-func downloadImageByUrl(url string){
+func downloadImageByUrl(url string) {
 
 }
 
@@ -23,12 +24,21 @@ func (s *Server) AddOneImage(w http.ResponseWriter, r *http.Request) {
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		fmt.Fprintf(w, "401: bad request")
+		fmt.Fprintf(w, "401 bad request: not a valid file")
 		w.WriteHeader(401)
 		return
 	}
 	defer file.Close()
-	log.Printf("[AddOneImage] Uploaded File: %+v\n", header.Filename)
+
+	isPrivate := r.FormValue("isPrivate")
+	isPrivateB, err := strconv.ParseBool(isPrivate)
+	if err != nil {
+		fmt.Fprintf(w, "401 bad request: isPrivate needs to be a bool value")
+		w.WriteHeader(401)
+		return
+	}
+
+	log.Printf("[AddOneImage] Uploaded File: %+v isPrivate: %+v\n", header.Filename, isPrivateB)
 
 	tempFile, err := ioutil.TempFile("./images", "upload-*.png")
 	if err != nil {
@@ -52,6 +62,6 @@ func (s *Server) AddOneImage(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func AddImages(w http.ResponseWriter, r *http.Request)  {
+func AddImages(w http.ResponseWriter, r *http.Request) {
 
 }
