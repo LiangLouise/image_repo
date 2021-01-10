@@ -9,7 +9,7 @@ import (
 )
 
 type SignUpRequest struct {
-	UserId string `json:"UserId"`
+	UserId string `json:"userId"`
 }
 
 func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +17,7 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	var signUp SignUpRequest
 	err := json.Unmarshal(reqBody, &signUp)
-	log.Printf( "[SignUp] request: %v\n", string(reqBody))
+	log.Printf("[SignUp] request: %v\n", string(reqBody))
 
 	if err != nil {
 		fmt.Fprintf(w, "401: bad request")
@@ -29,12 +29,4 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[SignUp]: New User %v\n", signUp.UserId)
 
 	w.WriteHeader(200)
-}
-
-func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (s *Server) LogOut(w http.ResponseWriter, r *http.Request) {
-
 }

@@ -1,0 +1,8 @@
+services:
+  image_repo:
+    image: docker.pkg.github.com/lianglouise/image_repo/image-repo
+    container_name: image-repo
+    tty: true
+    volumes:
+      - ./images:/app/images
+      - ./db:/app/db

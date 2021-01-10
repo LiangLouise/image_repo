@@ -16,3 +16,5 @@ api.key
 *.out
 
 .idea/
+
+.db

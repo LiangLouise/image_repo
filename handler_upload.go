@@ -16,6 +16,10 @@ func downloadImageByUrl(url string) {
 
 }
 
+// FormData
+// 	- userId
+// 	- isPrivate
+//	- file
 func (s *Server) AddOneImage(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
@@ -38,7 +42,14 @@ func (s *Server) AddOneImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("[AddOneImage] Uploaded File: %+v isPrivate: %+v\n", header.Filename, isPrivateB)
+	userId := r.FormValue("userId")
+	if userId == "" {
+		fmt.Fprintf(w, "401 bad request: require the userId")
+		w.WriteHeader(401)
+		return
+	}
+
+	log.Printf("[AddOneImage] Uploaded File: %+v userId: %+v isPrivate: %+v\n", header.Filename, userId, isPrivateB)
 
 	tempFile, err := ioutil.TempFile("./images", "upload-*.png")
 	if err != nil {
