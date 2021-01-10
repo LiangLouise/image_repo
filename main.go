@@ -1,25 +1,18 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-type Image struct {
-	Name      string
-	OwnerId   string
-	Path      string
-	IsPrivate bool
-}
-
 type Server struct {
-	db *sql.DB
+	db *gorm.DB
 
 	Users  []string
 	Images []Image
@@ -36,7 +29,7 @@ func (s *Server) RequestRouter() {
 
 	router.HandleFunc("/", s.homePage)
 
-	router.HandleFunc("/signup", s.SignUp).Methods("PUT")
+	router.HandleFunc("/signup", s.SignUp).Methods("POST")
 
 	router.HandleFunc("/upload", s.AddOneImage).Methods("POST")
 
@@ -67,12 +60,12 @@ func (s *Server) InitializeFilesys() {
 }
 
 func (s *Server) InitializeDB() {
-	_, err := s.db.Exec(CreateProfileTable)
+	err := s.db.AutoMigrate(&Image{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = s.db.Exec(CreatImageTable)
+	err = s.db.AutoMigrate(&User{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,15 +80,14 @@ func main() {
 
 	server.InitializeFilesys()
 
-	db, err := sql.Open("sqlite3", "./db/image_repo.db")
+	db, err := gorm.Open(sqlite.Open("./db/image_repo.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	server.db = db
 
-	defer db.Close()
+	// defer db.Close()
 
 	server.InitializeDB()
-
 	server.RequestRouter()
 }

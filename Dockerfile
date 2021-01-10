@@ -2,14 +2,14 @@ FROM golang:latest
 
 LABEL maintainer="Roy Liang <liangroy5@gmail.com>"
 
-RUN go get -v github.com/gorilla/mux github.com/mattn/go-sqlite3
-
 WORKDIR /app
 
 RUN mkdir /app/images
 VOLUME /app/images
 
 COPY *.go ./
+# Download libs
+RUN go get -d -v ./...
 
 RUN go build -o main .
 
