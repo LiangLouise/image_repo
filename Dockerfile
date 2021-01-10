@@ -9,7 +9,7 @@ VOLUME /app/images
 
 COPY *.go ./
 # Download libs
-RUN go get -d -v ./...
+RUN go get -v github.com/gorilla/mux gorm.io/gorm gorm.io/driver/sqlite
 
 RUN go build -o main .
 

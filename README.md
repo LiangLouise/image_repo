@@ -17,11 +17,10 @@ docker-compos up
 ## Run directly with `go` command
 
 ```bash
-# Clone the project
-git clone https://github.com/LiangLouise/image_repo.git
-
-cd image_repo
 # install the packages required
-go get -d -v ./...
+go get -v github.com/gorilla/mux gorm.io/gorm gorm.io/driver/sqlite
+
+git clone https://github.com/LiangLouise/image_repo.git
+cd image_repo
 go run .
-```
+```  
