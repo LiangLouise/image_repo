@@ -17,4 +17,4 @@ api.key
 
 .idea/
 
-.db
+*.db
