@@ -2,7 +2,7 @@ FROM golang:latest
 
 LABEL maintainer="Roy Liang <liangroy5@gmail.com>"
 
-RUN go get -v github.com/gorilla/mux
+RUN go get -v github.com/gorilla/mux github.com/mattn/go-sqlite3
 
 WORKDIR /app
 
