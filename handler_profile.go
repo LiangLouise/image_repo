@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -34,8 +33,7 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[SignUp] request: %v\n", string(reqBody))
 
 	if err != nil {
-		w.WriteHeader(401)
-		fmt.Fprintf(w, "401: bad request")
+		http.Error(w, "400 bad request: missing required field or invalid json", http.StatusBadRequest)
 		return
 	}
 	newUser := User{
@@ -45,23 +43,22 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	result := s.db.Where("name = ?", signUp.Name).First(&newUser)
 
-	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		log.Println(result.Error)
-		w.WriteHeader(500)
-		fmt.Fprintf(w, "500 Internal Server Error")
-		return
-	} else {
-		log.Printf("[SignUp]name: %v used already. ID %v\n", signUp.Name, newUser.ID)
-		w.WriteHeader(403)
-		fmt.Fprintf(w, "401:name: %v used already", signUp.Name)
-		return
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			log.Printf("[SignUp]name: %v used already. ID %v\n", signUp.Name, newUser.ID)
+			http.Error(w, "403: input name used alread", http.StatusForbidden)
+			return
+		} else {
+			log.Println(result.Error)
+			http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	result = s.db.Create(&newUser)
 	if result.Error != nil {
 		log.Println(result.Error)
-		w.WriteHeader(500)
-		fmt.Fprintf(w, "500 Internal Server Error")
+		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	log.Printf("[SignUp]: New User id: %v name: %v\n", newUser.ID, signUp.Name)

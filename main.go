@@ -31,7 +31,8 @@ func (s *Server) RequestRouter() {
 
 	router.HandleFunc("/signup", s.SignUp).Methods("POST")
 
-	router.HandleFunc("/upload", s.AddOneImage).Methods("POST")
+	router.HandleFunc("/image", s.AddOneImage).Methods("POST")
+	router.HandleFunc("/image", s.DeleteImage).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
