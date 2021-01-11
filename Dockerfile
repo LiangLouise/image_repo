@@ -5,7 +5,7 @@ LABEL maintainer="Roy Liang <liangroy5@gmail.com>"
 WORKDIR /app
 
 RUN mkdir /app/images
-VOLUME /app/images
+VOLUME ["/app/images", "/app/db"]
 
 COPY *.go ./
 # Download libs
