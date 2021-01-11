@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	"gorm.io/gorm"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -98,7 +100,7 @@ func (s *Server) AddOneImage(w http.ResponseWriter, r *http.Request) {
 	image := Image{
 		Name:      imageName,
 		OwnerId:   user.ID,
-		Path:      REPO_PATH + tempFile.Name(),
+		Path:      "./" + tempFile.Name(),
 		IsPrivate: isPrivateB,
 		CreatedAt: time.Now(),
 	}
@@ -164,6 +166,60 @@ func (s *Server) DeleteImage(w http.ResponseWriter, r *http.Request) {
 		}()
 		s.db.Delete(&image)
 		w.WriteHeader(200)
+		return
+	}
+}
+
+func (s *Server) GetOneImage(w http.ResponseWriter, r *http.Request) {
+	imageId := mux.Vars(r)["id"]
+	userId := r.FormValue("userid")
+
+	imageIdInt, err := strconv.ParseUint(imageId, 10, 32)
+	if err != nil {
+		http.Error(w, "400 bad request: require the userId", http.StatusBadRequest)
+		return
+	}
+
+	userIdInt, err := strconv.ParseUint(userId, 10, 32)
+	if err != nil {
+		http.Error(w, "400 bad request: require the userId", http.StatusBadRequest)
+		return
+	}
+	image := Image{
+		ID: uint(imageIdInt),
+	}
+
+	result := s.db.First(&image)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			log.Printf("[DeleteImage]image: %v not found\n", image.ID)
+			http.Error(w, "404: target image not found", http.StatusNotFound)
+			return
+		} else {
+			log.Println(result.Error)
+			http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	} else if image.OwnerId != uint(userIdInt) && image.IsPrivate {
+		log.Printf("[DeleteImage]image %v: wrong user %v \n", image.ID, userIdInt)
+		http.Error(w, "403: The image is private", http.StatusForbidden)
+		return
+	} else {
+		w.Header().Set("Content-Type", "image/png")
+		file, err := os.Open(image.Path)
+
+		if err != nil {
+			log.Println(result.Error)
+			http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
+
+		FileStat, _ := file.Stat()
+		//Get file size as a string
+		FileSize := strconv.FormatInt(FileStat.Size(), 10)
+		w.Header().Set("Content-Length", FileSize)
+		io.Copy(w, file)
 		return
 	}
 }

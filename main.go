@@ -1,18 +1,28 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/gorilla/mux"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+)
+
+const (
+	IMG_DIR_PATH = "./images"
+	DB_DIR_PATH  = "./db"
+	DB_PATH      = DB_DIR_PATH + "/image_repo.db"
 )
 
 type Server struct {
-	db *gorm.DB
+	db     *gorm.DB
+	router *mux.Router
 
 	Users  []string
 	Images []Image
@@ -33,62 +43,101 @@ func (s *Server) RequestRouter() {
 
 	router.HandleFunc("/image", s.AddOneImage).Methods("POST")
 	router.HandleFunc("/image", s.DeleteImage).Methods("DELETE")
+	router.Path("/image/{id:[0-9]+}").Queries("userid", "{userid:[0-9]+}").HandlerFunc(s.GetOneImage).Methods("GET")
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	s.router = router
+
 }
 
-func (s *Server) InitializeFilesys() {
-	// upload
-	if _, err := os.Stat("./images"); os.IsNotExist(err) {
+func (s *Server) InitializeFileSys(reset bool) {
+	if _, err := os.Stat(IMG_DIR_PATH); os.IsNotExist(err) {
 		log.Println("Initialize Directory for storing the images")
-		err = os.Mkdir("./images", os.ModeDir)
+		err = os.Mkdir(IMG_DIR_PATH, os.ModeDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if reset {
+		os.RemoveAll(IMG_DIR_PATH)
+		err = os.Mkdir(IMG_DIR_PATH, os.ModeDir)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	// sql
-	if _, err := os.Stat("./db"); os.IsNotExist(err) {
+	if _, err := os.Stat(DB_DIR_PATH); os.IsNotExist(err) {
 		log.Println("Initialize Directory for storing the sql dbs")
-	} else {
-		os.RemoveAll("./db")
-	}
-
-	err := os.Mkdir("./db", os.ModeDir)
-	if err != nil {
-		log.Fatal(err)
+		err := os.Mkdir(DB_DIR_PATH, os.ModeDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if reset {
+		os.RemoveAll(DB_DIR_PATH)
+		err := os.Mkdir(DB_DIR_PATH, os.ModeDir)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 func (s *Server) InitializeDB() {
-	err := s.db.AutoMigrate(&Image{})
+	newSchema := false
+	if _, err := os.Stat(DB_PATH); os.IsNotExist(err) {
+		newSchema = true
+	}
+	log.Print("Connected to DB...")
+	db, err := gorm.Open(sqlite.Open(DB_PATH), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	s.db = db
 
-	err = s.db.AutoMigrate(&User{})
-	if err != nil {
-		log.Fatal(err)
+	if newSchema {
+		log.Print("New DB initialize schemas...")
+		err = s.db.AutoMigrate(&Image{})
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = s.db.AutoMigrate(&User{})
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-
 }
 
 func main() {
-
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	log.Println("Start to host at port 8080")
 
 	server := Server{}
 
-	server.InitializeFilesys()
-
-	db, err := gorm.Open(sqlite.Open("./db/image_repo.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	server.db = db
-
-	// defer db.Close()
-
+	server.InitializeFileSys(false)
 	server.InitializeDB()
 	server.RequestRouter()
+
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: server.router,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	<-done
+	log.Print("Server Stopped")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		// extra handling here
+		cancel()
+	}()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server Shutdown Failed:%+v", err)
+	}
+	log.Print("Server Exited Properly")
+
 }

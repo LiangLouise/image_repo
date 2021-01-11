@@ -45,27 +45,28 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Printf("[SignUp]name: %v used already. ID %v\n", signUp.Name, newUser.ID)
-			http.Error(w, "403: input name used alread", http.StatusForbidden)
+			result = s.db.Create(&newUser)
+			if result.Error != nil {
+				log.Println(result.Error)
+				http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			log.Printf("[SignUp]: New User id: %v name: %v\n", newUser.ID, signUp.Name)
+
+			reply := SignUpReply{ID: newUser.ID}
+
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(reply)
 			return
 		} else {
 			log.Println(result.Error)
 			http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
 			return
 		}
-	}
-
-	result = s.db.Create(&newUser)
-	if result.Error != nil {
-		log.Println(result.Error)
-		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+	} else {
+		log.Printf("[SignUp]name: %v used already. ID %v\n", signUp.Name, newUser.ID)
+		http.Error(w, "403: input name used alread", http.StatusForbidden)
 		return
 	}
-	log.Printf("[SignUp]: New User id: %v name: %v\n", newUser.ID, signUp.Name)
-
-	reply := SignUpReply{ID: newUser.ID}
-
-	w.WriteHeader(200)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(reply)
 }
