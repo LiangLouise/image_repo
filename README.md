@@ -10,7 +10,7 @@ docker pull docker.pkg.github.com/lianglouise/image_repo/image-repo:latest
 docker run -it --rm -p 8080:8080 -v "$(pwd)":/app/images --name image-repo image-repo
 
 # Or use docker-compose
-docker-compos up
+docker-compose up
 ```
 
 ## Run directly with `go` command
