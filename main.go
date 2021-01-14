@@ -45,6 +45,12 @@ func (s *Server) RequestRouter() {
 	router.HandleFunc("/image", s.DeleteImage).Methods("DELETE")
 	router.Path("/image/{id:[0-9]+}").Queries("userid", "{userid:[0-9]+}").HandlerFunc(s.GetOneImage).Methods("GET")
 
+	router.Path("/search").
+		Queries("userid", "{userid:[0-9]+}").
+		Queries("text", "{text:[a-bA-B\\s]+}").
+		Queries("page", "{page:[0-9]+}").
+		HandlerFunc(s.SearchImages).Methods("GET")
+
 	s.router = router
 
 }

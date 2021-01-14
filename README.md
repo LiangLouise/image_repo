@@ -41,3 +41,15 @@ curl -X POST -F 'imageName=A_great_image' -F 'file=@<filename>' -F 'isPrivate=fa
 ```shell
 curl -X GET http://0.0.0.0:8080/image/1?userid=1
 ```
+
+* Image-Delete
+
+```shell
+curl -X DELETE http://0.0.0.0:8080/image/1?userid=1
+```
+
+* Search
+
+```shell
+curl -X GET http://0.0.0.0:8080/search?userid=1&text=<image_title_keyword>&page=1
+```
