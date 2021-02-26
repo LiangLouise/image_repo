@@ -8,8 +8,11 @@ RUN mkdir /app/images
 VOLUME ["/app/images", "/app/db"]
 
 COPY *.go ./
+COPY go.mod ./
+COPY go.sum ./
+
 # Download libs
-RUN go get -v github.com/gorilla/mux gorm.io/gorm gorm.io/driver/sqlite
+RUN go mod download
 
 RUN go build -o main .
 
